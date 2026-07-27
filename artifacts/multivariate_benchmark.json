@@ -1,0 +1,186 @@
+[
+  {
+    "currency": "US Dollar",
+    "rows": 5046,
+    "persistence": {
+      "arm": "persistence",
+      "test_mae": 0.07676799999999999,
+      "test_rmse": 0.11280316214306084,
+      "test_mape": 0.09152035903545984,
+      "test_samples": 475
+    },
+    "univariate": {
+      "arm": "univariate",
+      "features": 1,
+      "feature_names": [
+        "US Dollar"
+      ],
+      "train_samples": 4006,
+      "test_samples": 475,
+      "test_mae": 0.07932907070856192,
+      "test_rmse": 0.11442605160979427,
+      "test_mape": 0.09460261566576385,
+      "direction_hit_rate": 52.421052631578945
+    },
+    "multivariate": {
+      "arm": "multivariate",
+      "features": 6,
+      "feature_names": [
+        "US Dollar",
+        "gold",
+        "crude_oil",
+        "sp500",
+        "dxy",
+        "us_10y_yield"
+      ],
+      "train_samples": 4006,
+      "test_samples": 475,
+      "test_mae": 0.10901008647554064,
+      "test_rmse": 0.1384472076601226,
+      "test_mape": 0.13011788117580794,
+      "direction_hit_rate": 52.421052631578945
+    },
+    "mae_improvement_pct": -37.41505541646951,
+    "mae_vs_persistence_pct": -41.99938317468301,
+    "model_path": "D:\\FOrked projects\\Rupee-Vision\\artifacts\\lstm_multivariate_us_dollar.h5",
+    "scaler_path": "D:\\FOrked projects\\Rupee-Vision\\artifacts\\scaler_multivariate_us_dollar.pkl"
+  },
+  {
+    "currency": "Euro",
+    "rows": 5046,
+    "persistence": {
+      "arm": "persistence",
+      "test_mae": 0.26607157894736855,
+      "test_rmse": 0.34889168574064283,
+      "test_mape": 0.2947233526798557,
+      "test_samples": 475
+    },
+    "univariate": {
+      "arm": "univariate",
+      "features": 1,
+      "feature_names": [
+        "Euro"
+      ],
+      "train_samples": 4006,
+      "test_samples": 475,
+      "test_mae": 0.2757352210530869,
+      "test_rmse": 0.36027695181556707,
+      "test_mape": 0.30551281459664675,
+      "direction_hit_rate": 50.526315789473685
+    },
+    "multivariate": {
+      "arm": "multivariate",
+      "features": 6,
+      "feature_names": [
+        "Euro",
+        "gold",
+        "crude_oil",
+        "sp500",
+        "dxy",
+        "us_10y_yield"
+      ],
+      "train_samples": 4006,
+      "test_samples": 475,
+      "test_mae": 0.22158034148129313,
+      "test_rmse": 0.2958538127911325,
+      "test_mape": 0.24558590654556778,
+      "direction_hit_rate": 67.36842105263158
+    },
+    "mae_improvement_pct": 19.64017486230655,
+    "mae_vs_persistence_pct": 16.72152946289547,
+    "model_path": "D:\\FOrked projects\\Rupee-Vision\\artifacts\\lstm_multivariate_euro.h5",
+    "scaler_path": "D:\\FOrked projects\\Rupee-Vision\\artifacts\\scaler_multivariate_euro.pkl"
+  },
+  {
+    "currency": "Japanese Yen",
+    "rows": 5046,
+    "persistence": {
+      "arm": "persistence",
+      "test_mae": 0.2610526315789474,
+      "test_rmse": 0.3670898355558502,
+      "test_mape": 0.4605052604962754,
+      "test_samples": 475
+    },
+    "univariate": {
+      "arm": "univariate",
+      "features": 1,
+      "feature_names": [
+        "Japanese Yen"
+      ],
+      "train_samples": 4006,
+      "test_samples": 475,
+      "test_mae": 0.2671918412758526,
+      "test_rmse": 0.3764685160617671,
+      "test_mape": 0.4712866558923883,
+      "direction_hit_rate": 55.78947368421052
+    },
+    "multivariate": {
+      "arm": "multivariate",
+      "features": 6,
+      "feature_names": [
+        "Japanese Yen",
+        "gold",
+        "crude_oil",
+        "sp500",
+        "dxy",
+        "us_10y_yield"
+      ],
+      "train_samples": 4006,
+      "test_samples": 475,
+      "test_mae": 0.25817533634735595,
+      "test_rmse": 0.3673071291568189,
+      "test_mape": 0.4553243068416632,
+      "direction_hit_rate": 55.78947368421052
+    },
+    "mae_improvement_pct": 3.3745435060600832,
+    "mae_vs_persistence_pct": 1.102189705649958,
+    "model_path": "D:\\FOrked projects\\Rupee-Vision\\artifacts\\lstm_multivariate_japanese_yen.h5",
+    "scaler_path": "D:\\FOrked projects\\Rupee-Vision\\artifacts\\scaler_multivariate_japanese_yen.pkl"
+  },
+  {
+    "currency": "Pound Sterling",
+    "rows": 5046,
+    "persistence": {
+      "arm": "persistence",
+      "test_mae": 0.33487810526315787,
+      "test_rmse": 0.4318062080195358,
+      "test_mape": 0.31607729652798494,
+      "test_samples": 475
+    },
+    "univariate": {
+      "arm": "univariate",
+      "features": 1,
+      "feature_names": [
+        "Pound Sterling"
+      ],
+      "train_samples": 4006,
+      "test_samples": 475,
+      "test_mae": 0.35827257727355544,
+      "test_rmse": 0.4612217878318682,
+      "test_mape": 0.33823482293075813,
+      "direction_hit_rate": 53.473684210526315
+    },
+    "multivariate": {
+      "arm": "multivariate",
+      "features": 6,
+      "feature_names": [
+        "Pound Sterling",
+        "gold",
+        "crude_oil",
+        "sp500",
+        "dxy",
+        "us_10y_yield"
+      ],
+      "train_samples": 4006,
+      "test_samples": 475,
+      "test_mae": 0.3490438721462034,
+      "test_rmse": 0.45063598798435484,
+      "test_mape": 0.32959447708953904,
+      "direction_hit_rate": 53.473684210526315
+    },
+    "mae_improvement_pct": 2.5758893403403116,
+    "mae_vs_persistence_pct": -4.230126323700273,
+    "model_path": "D:\\FOrked projects\\Rupee-Vision\\artifacts\\lstm_multivariate_pound_sterling.h5",
+    "scaler_path": "D:\\FOrked projects\\Rupee-Vision\\artifacts\\scaler_multivariate_pound_sterling.pkl"
+  }
+]
