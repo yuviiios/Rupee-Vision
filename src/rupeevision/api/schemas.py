@@ -8,6 +8,7 @@ POST without a JSON content type dereferenced ``None``.
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -56,3 +57,43 @@ class PredictRequest(BaseModel):
         # No parameters supplied at all: fall back to the documented default
         # rather than failing, matching the previous public behaviour.
         return cls()
+
+
+class NewsItem(BaseModel):
+    """News article from Finnhub."""
+
+    headline: str
+    source: str
+    url: str
+    sentiment: float = Field(ge=-1, le=1)
+    datetime: int
+
+
+class SentimentResponse(BaseModel):
+    """Market sentiment aggregation per currency."""
+
+    currency: str
+    sentiment_score: float = Field(ge=-1, le=1, description="Aggregate sentiment -1 (bearish) to +1 (bullish)")
+    data_points: int = Field(ge=0, description="Number of news items aggregated")
+    timestamp: datetime
+
+
+class EconomicEvent(BaseModel):
+    """Economic calendar event."""
+
+    country: str
+    event: str
+    date: datetime
+    impact: str = Field(description="low, medium, high")
+    forecast: float | None = None
+    actual: float | None = None
+    previous: float | None = None
+
+
+class CorrelationData(BaseModel):
+    """Cross-asset correlation coefficient."""
+
+    asset: str = Field(description="S&P500, Gold, Oil, etc")
+    correlation: float = Field(ge=-1, le=1)
+    period_days: int = Field(description="Rolling window days")
+    timestamp: datetime

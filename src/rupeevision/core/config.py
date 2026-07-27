@@ -93,6 +93,17 @@ class Settings(BaseSettings):
         description="Readiness probe fails past this age of the newest observation.",
     )
 
+    # -- External APIs --------------------------------------------------------
+    finnhub_api_key: str = Field(
+        default="",
+        description="Finnhub API token. Required for market intelligence features.",
+    )
+    feature_cache_ttl_seconds: int = Field(
+        default=3600,
+        ge=60,
+        description="Cache TTL for market features (sentiment, events, correlation).",
+    )
+
     @field_validator("allowed_origins", mode="before")
     @classmethod
     def _split_origins(cls, value: object) -> object:

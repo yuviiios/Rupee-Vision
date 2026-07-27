@@ -22,7 +22,9 @@ from rupeevision.api.errors import register_error_handlers
 from rupeevision.api.routes import register_routes
 from rupeevision.core.config import Settings, get_settings
 from rupeevision.core.logging import configure_logging, get_logger
+from rupeevision.external.finnhub_client import FinnhubClient
 from rupeevision.ml.data import load_rate_history
+from rupeevision.ml.features import CorrelationAnalyzer, EconomicCalendar, SentimentAnalyzer
 from rupeevision.ml.forecaster import Forecaster
 from rupeevision.ml.registry import ModelRegistry
 
@@ -47,6 +49,10 @@ class Services:
     history: RateHistory
     registry: ModelRegistry
     forecaster: Forecaster
+    finnhub_client: FinnhubClient | None
+    sentiment_analyzer: SentimentAnalyzer | None
+    calendar: EconomicCalendar | None
+    correlation_analyzer: CorrelationAnalyzer | None
 
 
 def build_services(settings: Settings) -> Services:
@@ -58,11 +64,34 @@ def build_services(settings: Settings) -> Services:
         history,
         cache_enabled=settings.forecast_cache_size > 0,
     )
+
+    # Initialize Finnhub features (optional if key not provided)
+    finnhub_client = None
+    sentiment_analyzer = None
+    calendar = None
+    correlation_analyzer = None
+
+    if settings.finnhub_api_key:
+        try:
+            finnhub_client = FinnhubClient(settings.finnhub_api_key)
+            sentiment_analyzer = SentimentAnalyzer(finnhub_client, cache_ttl=settings.feature_cache_ttl_seconds)
+            calendar = EconomicCalendar(finnhub_client, cache_ttl=settings.feature_cache_ttl_seconds)
+            correlation_analyzer = CorrelationAnalyzer(finnhub_client, history, cache_ttl=settings.feature_cache_ttl_seconds)
+            logger.info("finnhub_initialized", cache_ttl=settings.feature_cache_ttl_seconds)
+        except Exception as exc:
+            logger.warning("finnhub_init_failed", error=str(exc))
+    else:
+        logger.info("finnhub_disabled", reason="FINNHUB_API_KEY not set")
+
     return Services(
         settings=settings,
         history=history,
         registry=registry,
         forecaster=forecaster,
+        finnhub_client=finnhub_client,
+        sentiment_analyzer=sentiment_analyzer,
+        calendar=calendar,
+        correlation_analyzer=correlation_analyzer,
     )
 
 

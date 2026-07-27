@@ -116,6 +116,74 @@ def predict() -> tuple[Any, int]:
     return jsonify(forecast.to_payload()), HTTPStatus.OK
 
 
+@bp.get("/sentiment")
+def sentiment() -> tuple[Any, int]:
+    """Fetch market sentiment for all currencies.
+
+    Returns aggregated sentiment scores from Finnhub news (-1 bearish, +1 bullish).
+
+    Returns:
+        {sentiments: [{currency, sentiment_score, data_points, timestamp}, ...]}
+        or {error: "..."} if Finnhub unavailable.
+    """
+    services = _services()
+    if not services.sentiment_analyzer:
+        return (
+            jsonify({"error": "Finnhub API key not configured. Set FINNHUB_API_KEY environment variable."}),
+            HTTPStatus.SERVICE_UNAVAILABLE,
+        )
+
+    sentiments = services.sentiment_analyzer.get_all_sentiments()
+    logger.info("sentiment_served", count=len(sentiments))
+    return jsonify({"sentiments": sentiments}), HTTPStatus.OK
+
+
+@bp.get("/economic-calendar")
+def economic_calendar() -> tuple[Any, int]:
+    """Fetch upcoming economic events relevant to INR.
+
+    Returns RBI, Fed, ECB events filtered for next 30 days.
+
+    Query params:
+        days: Look-ahead window (default 30).
+
+    Returns:
+        {events: [{country, event, date, impact, ...}, ...]}
+    """
+    services = _services()
+    if not services.calendar:
+        return (
+            jsonify({"error": "Finnhub API key not configured."}),
+            HTTPStatus.SERVICE_UNAVAILABLE,
+        )
+
+    days = request.args.get("days", 30, type=int)
+    events = services.calendar.get_upcoming_events(days_ahead=min(days, 365))
+    logger.info("calendar_served", event_count=len(events))
+    return jsonify({"events": events}), HTTPStatus.OK
+
+
+@bp.get("/correlation")
+def correlation() -> tuple[Any, int]:
+    """Fetch cross-asset correlation with INR rates.
+
+    Returns rolling correlation for S&P 500, Gold, Oil.
+
+    Returns:
+        {correlations: [{asset, correlation, period_days, timestamp}, ...]}
+    """
+    services = _services()
+    if not services.correlation_analyzer:
+        return (
+            jsonify({"error": "Finnhub API key not configured."}),
+            HTTPStatus.SERVICE_UNAVAILABLE,
+        )
+
+    correlations = services.correlation_analyzer.get_all_correlations()
+    logger.info("correlation_served", asset_count=len(correlations))
+    return jsonify({"correlations": correlations}), HTTPStatus.OK
+
+
 def register_routes(app: Any) -> None:
     """Register the API blueprint on ``app``."""
     app.register_blueprint(bp)
