@@ -1,0 +1,19 @@
+# Development and CI dependencies. Install alongside requirements.txt:
+#   pip install -r requirements.txt -r requirements-dev.txt
+-r requirements.txt
+
+# Testing
+pytest==8.4.2
+pytest-cov==7.0.0
+
+# Linting, formatting and type checking
+mypy==1.18.2
+pandas-stubs==2.3.3.250926
+ruff==0.14.4
+
+# Supply-chain auditing
+pip-audit==2.9.0
+
+# Training and evaluation extras
+matplotlib==3.10.6
+statsmodels==0.14.5

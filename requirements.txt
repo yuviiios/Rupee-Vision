@@ -1,6 +1,21 @@
-flask
-pandas
-numpy
-joblib
-tensorflow
-flask-cors
+# Runtime dependencies, fully pinned for reproducible installs.
+#
+# Unpinned dependencies were a real hazard here, not a stylistic issue: the
+# scalers are pickled scikit-learn objects, so loading them under a different
+# scikit-learn version raises InconsistentVersionWarning and can silently produce
+# wrong values. numpy and TensorFlow majors are ABI-breaking.
+#
+# Source of truth is pyproject.toml; this file exists for `pip install -r`.
+flask==3.1.2
+flask-cors==6.0.5
+Flask-Limiter==4.1.1
+gunicorn==23.0.0; sys_platform != 'win32'
+waitress==3.0.2; sys_platform == 'win32'
+joblib==1.5.2
+numpy==2.3.5
+pandas==2.3.3
+pydantic==2.13.4
+pydantic-settings==2.12.0
+scikit-learn==1.7.2
+structlog==26.1.0
+tensorflow-cpu==2.21.0
