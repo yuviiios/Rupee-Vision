@@ -111,9 +111,16 @@ def predict() -> tuple[Any, int]:
     payload = request.get_json(silent=True) if request.method == "POST" else None
     parsed = PredictRequest.from_request(args=request.args, json_body=payload)
 
-    forecast = _services().forecaster.forecast(parsed.days)
+    services = _services()
+    archive_status = None
+    if request.args.get("latest") == "1":
+        services, archive_status = current_app.extensions["rate_archive"].check(current_app)
+    forecast = services.forecaster.forecast(parsed.days)
     logger.info("prediction_served", horizon_days=parsed.days, as_of=str(forecast.as_of))
-    return jsonify(forecast.to_payload()), HTTPStatus.OK
+    result = forecast.to_payload()
+    if archive_status is not None:
+        result["archive_status"] = archive_status
+    return jsonify(result), HTTPStatus.OK
 
 
 @bp.get("/sentiment")

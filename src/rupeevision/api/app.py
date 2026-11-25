@@ -23,6 +23,7 @@ from rupeevision.api.routes import register_routes
 from rupeevision.core.config import Settings, get_settings
 from rupeevision.core.logging import configure_logging, get_logger
 from rupeevision.external.finnhub_client import FinnhubClient
+from rupeevision.external.rate_archive import ArchiveRefresh
 from rupeevision.ml.data import load_rate_history
 from rupeevision.ml.features import CorrelationAnalyzer, EconomicCalendar, SentimentAnalyzer
 from rupeevision.ml.forecaster import Forecaster
@@ -49,10 +50,10 @@ class Services:
     history: RateHistory
     registry: ModelRegistry
     forecaster: Forecaster
-    finnhub_client: FinnhubClient | None
-    sentiment_analyzer: SentimentAnalyzer | None
-    calendar: EconomicCalendar | None
-    correlation_analyzer: CorrelationAnalyzer | None
+    finnhub_client: FinnhubClient | None = None
+    sentiment_analyzer: SentimentAnalyzer | None = None
+    calendar: EconomicCalendar | None = None
+    correlation_analyzer: CorrelationAnalyzer | None = None
 
 
 def build_services(settings: Settings) -> Services:
@@ -137,6 +138,7 @@ def create_app(
     if container.settings is not resolved:
         container = replace(container, settings=resolved)
     app.extensions["rupeevision"] = container
+    app.extensions["rate_archive"] = ArchiveRefresh()
 
     _register_rate_limiter(app, resolved)
     _register_request_logging(app)
