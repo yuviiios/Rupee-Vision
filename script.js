@@ -7,26 +7,25 @@ function predictDays(days) {
 }
 
 // Main prediction function
-async function predictRates() {
+async function predictRates(latest = false) {
     const daysInput = document.getElementById("days");
-    const days = daysInput.value;
+    const days = Number(daysInput.value);
     
-    if (!days || days < 1 || days > 30) {
+    if (!Number.isInteger(days) || days < 1 || days > 30) {
         alert("Please enter a valid number of days (1-30)");
         return;
     }
     
     const loader = document.getElementById("loader");
+    if (loader.style.display === "block") return;
     loader.style.display = "block";
+    document.getElementById("prediction-results").style.display = "none";
     
     try {
-        // Simulate API call delay
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        const response = await fetch("http://127.0.0.1:5000/predict", {
+        const response = await fetch(`http://127.0.0.1:5000/predict${latest ? "?latest=1" : ""}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ days: parseInt(days) }),
+            body: JSON.stringify({ days }),
         });
 
         if (!response.ok) {
@@ -34,36 +33,10 @@ async function predictRates() {
         }
 
         const data = await response.json();
-        if (data.error) {
-            alert("Error: " + data.error);
-            return;
-        }
-
-        // Show the prediction results container
-        const predictionResults = document.getElementById("prediction-results");
-        predictionResults.style.display = "block";
-        
-        // Display the results
         displayResults(data, days);
-        
+        document.getElementById("prediction-results").style.display = "block";
     } catch (error) {
-        console.error("Error:", error);
-        // Generate and display sample data
-        const mockData = {
-            "US Dollar": Array.from({length: parseInt(days)}, () => 85 + Math.random() * 0.2),
-            "Euro": Array.from({length: parseInt(days)}, () => 91 + Math.random() * 0.3),
-            "Japanese Yen": Array.from({length: parseInt(days)}, () => 56 + Math.random() * 0.1),
-            "Pound Sterling": Array.from({length: parseInt(days)}, () => 95 + Math.random() * 0.4)
-        };
-        
-        // Show the prediction results container
-        const predictionResults = document.getElementById("prediction-results");
-        predictionResults.style.display = "block";
-        
-        // Display the results
-        displayResults(mockData, days);
-        
-        console.log("Using mock data due to API error");
+        alert("Forecast unavailable. Check the API connection and try again.");
     } finally {
         loader.style.display = "none";
     }
@@ -73,40 +46,29 @@ async function predictRates() {
 function displayResults(data, days) {
     const tbody = document.querySelector("#resultTable tbody");
     tbody.innerHTML = "";
-    let today = new Date();
-    let labels = [];
-    let datasets = [];
-    
-    for (let currency in data) {
-        datasets.push({
-            label: currency,
-            data: data[currency],
-            borderColor: currencyColors[currency],
-            fill: false,
-            tension: 0.4
+    const currencies = ["US Dollar", "Euro", "Japanese Yen", "Pound Sterling"];
+    if (data.dates.length !== days || currencies.some(currency => {
+        const values = data.predictions[currency]?.values;
+        return !Array.isArray(values) || values.length !== days || !values.every(Number.isFinite);
+    })) throw new Error("Incomplete forecast");
+
+    const labels = data.dates;
+    const datasets = currencies.map(currency => ({
+        label: currency === "Japanese Yen" ? "Japanese Yen (100 JPY)" : currency,
+        data: data.predictions[currency].values,
+        borderColor: currencyColors[currency],
+        fill: false,
+        tension: 0.4
+    }));
+    document.getElementById("forecast-as-of").textContent = (data.archive_status === "unavailable" ? "Archive unavailable. Using observations through " : "Based on observations through ") + data.as_of;
+    labels.forEach((date, index) => {
+        const row = tbody.insertRow();
+        row.insertCell().textContent = date;
+        currencies.forEach(currency => {
+            row.insertCell().textContent = data.predictions[currency].values[index].toFixed(3);
         });
-    }
-    
-    for (let i = 0; i < days; i++) {
-        let row = tbody.insertRow();
-        let dateCell = row.insertCell(0);
-        let usdCell = row.insertCell(1);
-        let eurCell = row.insertCell(2);
-        let jpyCell = row.insertCell(3);
-        let gbpCell = row.insertCell(4);
-        
-        let futureDate = new Date();
-        futureDate.setDate(today.getDate() + i + 1);
-        let dateString = futureDate.toLocaleDateString('en-IN');
-        
-        dateCell.textContent = dateString;
-        labels.push(dateString);
-        usdCell.textContent = data["US Dollar"][i].toFixed(3);
-        eurCell.textContent = data["Euro"][i].toFixed(3);
-        jpyCell.textContent = data["Japanese Yen"][i].toFixed(3);
-        gbpCell.textContent = data["Pound Sterling"][i].toFixed(3);
-    }
-    
+    });
+
     updateChart(labels, datasets);
 }
 
@@ -194,155 +156,55 @@ async function fetchCurrentRates() {
         if (data && data.rates) {
             const currencies = ['USD', 'EUR', 'JPY', 'GBP'];
             const currentRatesContainer = document.getElementById('current-rates');
-            currentRatesContainer.innerHTML = '';
-            
+            const cards = document.createDocumentFragment();
             currencies.forEach(currency => {
                 // Calculate inverse rate (currency to INR)
-                const rate = (1 / data.rates[currency]).toFixed(2);
-                
-                // Generate random change percentage for demo
-                const change = (Math.random() * 2 - 1).toFixed(2);
-                
-                const cardHtml = `
-                    <div class="currency-card">
-                        <div class="currency-symbol">${getCurrencySymbol(currency)}</div>
-                        <p>${currency}/INR</p>
-                        <h3>${rate}</h3>
-                        <p class="currency-change ${change >= 0 ? 'positive' : 'negative'}">
-                            ${change >= 0 ? '▲' : '▼'} ${Math.abs(change)}%
-                        </p>
-                    </div>
-                `;
-                
-                currentRatesContainer.innerHTML += cardHtml;
+                const quote = data.rates[currency];
+                if (!Number.isFinite(quote) || quote <= 0) throw new Error("Invalid rate");
+                const card = document.createElement("div");
+                card.className = "currency-card";
+                card.textContent = currency + "/INR " + (1 / quote).toFixed(2);
+                cards.append(card);
             });
+            currentRatesContainer.replaceChildren(cards);
         } else {
             throw new Error('Invalid API response');
         }
     } catch (error) {
         console.error('Error fetching current rates:', error);
-        // Fallback to mock data if API fails
-        const currencies = ['USD', 'EUR', 'JPY', 'GBP'];
-        const currentRatesContainer = document.getElementById('current-rates');
-        currentRatesContainer.innerHTML = '';
-        
-        currencies.forEach(currency => {
-            const baseRate = currency === 'USD' ? 85.42 : 
-                          currency === 'EUR' ? 82.15 : 
-                          currency === 'JPY' ? 0.54 : 95.78;
-            const rate = (baseRate + (Math.random() * 2 - 1)).toFixed(2);
-            const change = (Math.random() * 2 - 1).toFixed(2);
-            
-            const cardHtml = `
-                <div class="currency-card">
-                    <div class="currency-symbol">${getCurrencySymbol(currency)}</div>
-                    <p>${currency}/INR</p>
-                    <h3>${rate}</h3>
-                    <p class="currency-change ${change >= 0 ? 'positive' : 'negative'}">
-                        ${change >= 0 ? '▲' : '▼'} ${Math.abs(change)}%
-                    </p>
-                </div>
-            `;
-            
-            currentRatesContainer.innerHTML += cardHtml;
-        });
+        document.getElementById("current-rates").textContent = "Current rates unavailable.";
     } finally {
         ratesLoader.style.display = 'none';
     }
 }
 
-// Function to generate market insights for each currency
-function generateMarketInsights() {
-    const currencies = {
-        'USD': {
-            name: 'US Dollar',
-            symbol: 'fas fa-dollar-sign',
-            insights: [
-                'Expected to strengthen against INR due to Fed policy',
-                'Showing resilience amid global economic uncertainty',
-                'Technical indicators suggest bullish momentum',
-                'Volatility expected after upcoming economic data release',
-                'Trading range likely to remain tight in coming sessions'
-            ]
-        },
-        'EUR': {
-            name: 'Euro',
-            symbol: 'fas fa-euro-sign',
-            insights: [
-                'Showing increased volatility against INR',
-                'ECB policy decisions weighing on exchange rates',
-                'Bearish trend forming in short-term charts',
-                'Support levels being tested after recent decline',
-                'Inflation concerns impacting currency strength'
-            ]
-        },
-        'JPY': {
-            name: 'Japanese Yen',
-            symbol: 'fas fa-yen-sign',
-            insights: [
-                'Strengthening as a safe-haven currency',
-                'Bank of Japan intervention likely if volatility continues',
-                'Technical analysis shows potential reversal pattern',
-                'Correlation with US Treasury yields affecting movement',
-                'Seasonal patterns suggest upcoming appreciation'
-            ]
-        },
-        'GBP': {
-            name: 'British Pound',
-            symbol: 'fas fa-pound-sign',
-            insights: [
-                'Trending upward this week against INR',
-                'UK economic data supporting currency strength',
-                'Breaking key resistance levels in recent sessions',
-                'Momentum indicators suggest continued uptrend',
-                'Brexit developments still influencing long-term outlook'
-            ]
-        }
-    };
-    
-    const insightsList = document.getElementById('market-insights');
-    insightsList.innerHTML = '';
-    
-    Object.keys(currencies).forEach(currency => {
-        const currencyData = currencies[currency];
-        // Pick a random insight for each currency
-        const randomInsight = currencyData.insights[Math.floor(Math.random() * currencyData.insights.length)];
-        
-        const insightHtml = `
-            <li>
-                <i class="${currencyData.symbol}"></i>
-                <span><strong>${currencyData.name}:</strong> ${randomInsight}</span>
-            </li>
-        `;
-        
-        insightsList.innerHTML += insightHtml;
-    });
+async function fetchMarketSentiment() {
+    const list = document.getElementById("market-insights");
+    try {
+        const response = await fetch("http://127.0.0.1:5000/sentiment");
+        if (!response.ok) throw new Error("Sentiment unavailable");
+        const { sentiments } = await response.json();
+        const items = sentiments
+            .filter(entry => entry.data_points > 0 && Number.isFinite(entry.sentiment_score))
+            .map(entry => {
+                const item = document.createElement("li");
+                const name = entry.currency.replaceAll("_", " ");
+                item.textContent = name + ": " + entry.sentiment_score + " (" + entry.data_points + " articles)";
+                return item;
+            });
+        if (items.length) list.replaceChildren(...items);
+        else list.textContent = "No scored articles available.";
+    } catch {
+        list.textContent = "Market sentiment unavailable.";
+    }
 }
 
-// Helper function to get currency symbols
-function getCurrencySymbol(currency) {
-    const symbols = {
-        'USD': '$',
-        'EUR': '€',
-        'JPY': '¥',
-        'GBP': '£'
-    };
-    return symbols[currency] || currency;
-}
-
-// Function to generate random colors for chart
-// function getRandomColor() {
-//     const colors = [
-//         '#4CAF50', '#2196F3', '#FFC107', '#E91E63', '#9C27B0','#FF5733', '#33FF57', '#3357FF', '#FF33A1', '#A133FF', '#FFD700', '#00CED1', '#8B4513', '#FF4500', '#2E8B57'
-//     ];
-//     return colors[Math.floor(Math.random() * colors.length)];
-// }
-    const currencyColors = {
-        "US Dollar": "#4CAF50",   // Green
-        "Pound Sterling": "#2196F3",   // Blue
-        "Euro": "#FFC107",   // Yellow
-        "Japanese Yen": "#E91E63"   // Pink
-    };
+const currencyColors = {
+    "US Dollar": "#4CAF50",
+    "Pound Sterling": "#2196F3",
+    "Euro": "#FFC107",
+    "Japanese Yen": "#E91E63"
+};
 
 // Function to update the live clock
 function updateClock() {
@@ -372,13 +234,7 @@ window.onload = function() {
     
     // Set up interval to refresh rates every 5 minutes
     setInterval(fetchCurrentRates, 300000);
+    fetchMarketSentiment();
+    setInterval(fetchMarketSentiment, 120000);
     
-    // Generate market insights
-    generateMarketInsights();
-    
-    // Refresh market insights every 2 minutes
-    setInterval(generateMarketInsights, 120000);
-    
-    // Show the rates loader initially
-    document.getElementById('rates-loader').style.display = 'block';
 };

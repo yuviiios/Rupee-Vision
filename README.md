@@ -34,22 +34,14 @@ RupeeVision is a web application that predicts future currency exchange rates fo
 
 ### Backend (Flask)
 
-1.  **Navigate to the project directory:**
-    ```bash
-    cd RupeeVision
-    ```
+From the cloned repository root, activate a Python 3.11 virtual environment and run:
 
-2.  **Install the required Python packages:**
-    ```bash
-    pip install -r requirements.txt
-    ```
-    *(Note: You may need to create a `requirements.txt` file first. See below.)*
+```bash
+python -m pip install -e .
+rupeevision-serve
+```
 
-3.  **Run the Flask application:**
-    ```bash
-    python flaskapp-1.py
-    ```
-    The backend server will start on `http://127.0.0.1:5000`.
+The API listens on `http://127.0.0.1:5000`. Open `/currencies` to see the latest observation date, or `/predict?days=7` to request a forecast. Forecast dates start after the last observation in the dataset. The `/ready` endpoint reports stale data when it exceeds the configured age limit.
 
 ### Frontend (React)
 
@@ -60,7 +52,7 @@ RupeeVision is a web application that predicts future currency exchange rates fo
 
 2.  **Install the required Node.js packages:**
     ```bash
-    npm install
+    npm ci
     ```
 
 3.  **Run the React application:**
@@ -69,19 +61,22 @@ RupeeVision is a web application that predicts future currency exchange rates fo
     ```
     The frontend development server will start on `http://localhost:3000`. You can view the application in your browser at this address.
 
-### Creating `requirements.txt`
-
-If you don't have a `requirements.txt` file, you can create one with the following content:
-
-```
-flask
-pandas
-numpy
-joblib
-tensorflow
-flask-cors
-```
+Set `REACT_APP_API_BASE_URL` before starting or building React to use a different API host. Configure `RUPEEVISION_ALLOWED_ORIGINS` on the backend to allow the frontend origin.
 
 ## Disclaimer
 
 This project is for educational purposes only. The predicted exchange rates are not guaranteed to be accurate and should not be used for making financial decisions.
+
+## Forecast with the latest observations
+
+Select **Predict with latest data** in either interface, or request
+`GET /predict?days=7&latest=1`. The API checks the [RBI/FBIL historical archive](https://github.com/the-solipsist/rbi-forex-reference-rates),
+validates its dates, rates and units, and uses the existing trained models with
+the refreshed observations. Yen forecasts are INR per 100 JPY.
+
+The response includes the dataset date in `as_of`. An `archive_status` of
+`verified` means the archive was checked successfully. If the archive is
+unavailable or invalid, `unavailable` accompanies the forecast from the last
+usable snapshot. Each server process keeps its snapshot in memory and reuses a
+successful check for five minutes. After a restart it starts with the configured
+local CSV. Ordinary forecasts require no network access.

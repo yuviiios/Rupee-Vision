@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -106,19 +106,19 @@ class TestEconomicCalendar:
     @patch.object(FinnhubClient, "get_economic_calendar")
     def test_get_upcoming_events(self, mock_cal):
         """Filter events for INR relevance."""
-        # Use future dates (30+ days from now)
+        today = datetime.utcnow()
         mock_cal.return_value = [
             {
                 "country": "US",
                 "event": "Federal Reserve Interest Decision",
-                "date": "2026-08-27 14:30:00",
+                "date": (today + timedelta(days=27)).isoformat(sep=" "),
                 "impact": "high",
                 "forecast": 5.5,
             },
             {
                 "country": "IN",
                 "event": "RBI Interest Decision",
-                "date": "2026-08-08 10:30:00",
+                "date": (today + timedelta(days=8)).isoformat(sep=" "),
                 "impact": "high",
                 "forecast": 6.5,
             },
