@@ -21,3 +21,4 @@ scikit-learn==1.7.2
 structlog==26.1.0
 tensorflow-cpu==2.21.0
 urllib3==2.2.2
+streamlit==1.67.0

@@ -3,21 +3,18 @@
 from __future__ import annotations
 
 from dataclasses import replace
-from datetime import date
 from io import BytesIO
 from threading import Lock
 from time import monotonic
 from typing import TYPE_CHECKING
 
-import numpy as np
 import pandas as pd
 import requests
 
-from rupeevision.core.constants import CURRENCY_CODES, SEQ_LENGTH
 from rupeevision.core.logging import get_logger
-from rupeevision.ml.data import RateHistory
+from rupeevision.ml.data import RateHistory, archive_history
 from rupeevision.ml.features import CorrelationAnalyzer
-from rupeevision.ml.forecaster import Forecaster
+from rupeevision.ml.session_models import build_forecaster
 
 if TYPE_CHECKING:
     from flask import Flask
@@ -36,22 +33,7 @@ def fetch_history() -> RateHistory:
     response = requests.get(ARCHIVE_URL, timeout=(4, 12))
     response.raise_for_status()
     rows = pd.read_csv(BytesIO(response.content), usecols=["date", "currency", "rate", "unit"])
-    names = {code: name for name, code in CURRENCY_CODES.items()}
-    rows = rows.loc[rows["currency"].isin(names)].copy()
-    expected_units = np.where(rows["currency"] == "JPY", 100, 1)
-    if not (rows["unit"] == expected_units).all():
-        raise ValueError("Unexpected quote unit")
-    rows["date"] = pd.to_datetime(rows["date"], format="%Y-%m-%d", errors="raise")
-    if rows["date"].isna().any() or not np.isfinite(rows["rate"]).all() or (rows["rate"] <= 0).any():
-        raise ValueError("Invalid observation")
-    frame = rows.pivot(index="date", columns="currency", values="rate").sort_index()
-    frame = frame.rename(columns=names).reindex(columns=list(CURRENCY_CODES))
-    if frame.empty or frame.iloc[-1].isna().any() or frame.count().min() < SEQ_LENGTH:
-        raise ValueError("Incomplete rate history")
-    as_of = frame.index[-1].date()
-    if as_of > date.today():
-        raise ValueError("Future observation")
-    return RateHistory(frame=frame.ffill(), as_of=as_of)
+    return archive_history(rows)
 
 
 class ArchiveRefresh:
@@ -81,7 +63,7 @@ class ArchiveRefresh:
                         )
                     services = replace(
                         services, history=history, correlation_analyzer=correlation,
-                        forecaster=Forecaster(
+                        forecaster=build_forecaster(
                             services.registry, history,
                             cache_enabled=services.settings.forecast_cache_size > 0,
                         ),

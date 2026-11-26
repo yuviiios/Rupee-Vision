@@ -56,10 +56,13 @@ class Forecast:
     dates: tuple[date, ...]
     series: dict[str, tuple[float, ...]]
     as_of: date
+    date_basis: str | None = None
+    models: dict[str, str] | None = None
 
     def to_payload(self) -> dict[str, object]:
         """Return a JSON-serialisable API response body."""
         return {
+            **({"date_basis": self.date_basis, "models": self.models} if self.date_basis else {}),
             "as_of": self.as_of.isoformat(),
             "horizon_days": len(self.dates),
             "dates": [day.isoformat() for day in self.dates],

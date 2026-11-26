@@ -1,0 +1,49 @@
+{
+  "selected": {
+    "USD": "Ridge10000",
+    "EUR": "Last rate",
+    "JPY": "Last rate",
+    "GBP": "Last rate"
+  },
+  "epochs": {
+    "USD": 4,
+    "EUR": 15,
+    "JPY": 5,
+    "GBP": 7
+  },
+  "trained_through": "2026-11-25",
+  "snapshot_revision": "13f8f41326c3677c8ebd715fc458a8b7dfb21f0c",
+  "sessions": 6631,
+  "horizons": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30
+  ]
+}

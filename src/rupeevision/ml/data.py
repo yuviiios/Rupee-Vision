@@ -26,7 +26,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from rupeevision.core.constants import CURRENCIES
+from rupeevision.core.constants import CURRENCIES, CURRENCY_CODES, SEQ_LENGTH
 from rupeevision.core.exceptions import DataError
 from rupeevision.core.logging import get_logger
 
@@ -115,6 +115,9 @@ def load_rate_history(
         raise DataError(msg)
 
     try:
+        columns = pd.read_csv(path, nrows=0).columns
+        if {"currency", "rate", "unit", "date"}.issubset(columns):
+            return archive_history(pd.read_csv(path, usecols=["currency", "rate", "unit", "date"]))
         raw = pd.read_csv(path, usecols=_USED_COLUMNS, dtype={"currency_name": "string"})
     except (OSError, ValueError) as exc:
         logger.exception("dataset_read_failed", path=str(path))
@@ -209,3 +212,26 @@ def _validate(frame: pd.DataFrame, currencies: tuple[str, ...]) -> None:
         if missing[first_valid:].any():
             msg = f"{currency} contains interior gaps after forward-fill"
             raise DataError(msg)
+
+
+def archive_history(rows: pd.DataFrame) -> RateHistory:
+    """Validate archived fixing units and keep jointly observed trading sessions."""
+    names = {code: name for name, code in CURRENCY_CODES.items()}
+    rows = rows.loc[rows["currency"].isin(names)].copy()
+    expected_units = np.where(rows["currency"] == "JPY", 100, 1)
+    if not (rows["unit"] == expected_units).all():
+        raise ValueError("Unexpected quote unit")
+    rows["date"] = pd.to_datetime(rows["date"], format="%Y-%m-%d", errors="raise")
+    if rows["date"].isna().any() or not np.isfinite(rows["rate"]).all() or (rows["rate"] <= 0).any():
+        raise ValueError("Invalid observation")
+    frame = rows.pivot(index="date", columns="currency", values="rate").sort_index()
+    frame = frame.rename(columns=names).reindex(columns=list(CURRENCY_CODES))
+    if frame.empty or frame.iloc[-1].isna().any() or frame.count().min() < SEQ_LENGTH:
+        raise ValueError("Incomplete rate history")
+    as_of = frame.index[-1].date()
+    if as_of > date.today():
+        raise ValueError("Future observation")
+    frame = frame.dropna()
+    if len(frame) < SEQ_LENGTH + 1:
+        raise ValueError("Too few complete trading sessions")
+    return RateHistory(frame=frame, as_of=as_of)

@@ -75,8 +75,8 @@ class Settings(BaseSettings):
     )
 
     # -- Data and artifacts ---------------------------------------------------
-    data_path: Path = Field(default=PROJECT_ROOT / "data" / "newdataset.csv")
-    model_dir: Path = Field(default=PROJECT_ROOT / "artifacts")
+    data_path: Path = Field(default=PROJECT_ROOT / "data" / "rbi_fbil_13f8f41.csv")
+    model_dir: Path = Field(default=PROJECT_ROOT / "artifacts" / "session_20261125")
 
     # -- Performance ----------------------------------------------------------
     forecast_cache_size: int = Field(

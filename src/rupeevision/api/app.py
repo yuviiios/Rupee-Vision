@@ -28,6 +28,7 @@ from rupeevision.ml.data import load_rate_history
 from rupeevision.ml.features import CorrelationAnalyzer, EconomicCalendar, SentimentAnalyzer
 from rupeevision.ml.forecaster import Forecaster
 from rupeevision.ml.registry import ModelRegistry
+from rupeevision.ml.session_models import SessionForecaster, SessionModels, build_forecaster
 
 if TYPE_CHECKING:  # pragma: no cover
     from rupeevision.ml.data import RateHistory
@@ -48,8 +49,8 @@ class Services:
 
     settings: Settings
     history: RateHistory
-    registry: ModelRegistry
-    forecaster: Forecaster
+    registry: ModelRegistry | SessionModels
+    forecaster: Forecaster | SessionForecaster
     finnhub_client: FinnhubClient | None = None
     sentiment_analyzer: SentimentAnalyzer | None = None
     calendar: EconomicCalendar | None = None
@@ -59,8 +60,9 @@ class Services:
 def build_services(settings: Settings) -> Services:
     """Construct the service container from configuration."""
     history = load_rate_history(settings.data_path)
-    registry = ModelRegistry(settings.model_dir)
-    forecaster = Forecaster(
+    registry = (SessionModels(settings.model_dir) if (settings.model_dir / "release.json").is_file()
+                else ModelRegistry(settings.model_dir))
+    forecaster = build_forecaster(
         registry,
         history,
         cache_enabled=settings.forecast_cache_size > 0,

@@ -60,7 +60,7 @@ function displayResults(data, days) {
         fill: false,
         tension: 0.4
     }));
-    document.getElementById("forecast-as-of").textContent = (data.archive_status === "unavailable" ? "Archive unavailable. Using observations through " : "Based on observations through ") + data.as_of;
+    document.getElementById("forecast-as-of").textContent = (data.archive_status === "unavailable" ? "Archive unavailable. Using observations through " : "Based on observations through ") + data.as_of + (data.date_basis ? ". Dates are estimated weekdays and may shift on market holidays." : "");
     labels.forEach((date, index) => {
         const row = tbody.insertRow();
         row.insertCell().textContent = date;
